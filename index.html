@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Spreadsheet — Powered by Gemini</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --glass-bg: rgba(255,255,255,0.07);
+    --glass-border: rgba(255,255,255,0.15);
+    --glass-shadow: rgba(0,0,0,0.35);
+    --accent: #7DF9FF;
+    --accent2: #BF77F6;
+    --accent3: #FF6FD8;
+    --text: #f0f0ff;
+    --muted: rgba(240,240,255,0.45);
+    --danger: #FF6B6B;
+    --success: #6BFFB8;
+    --highlight-yellow: rgba(255, 240, 60, 0.35);
+    --highlight-red: rgba(255, 80, 80, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0a1a;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated background ── */
+  .bg-orbs {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  }
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.25;
+    animation: drift 18s ease-in-out infinite;
+  }
+  .orb1 { width:520px;height:520px;background:radial-gradient(circle,#7DF9FF,transparent); top:-120px;left:-120px;animation-delay:0s; }
+  .orb2 { width:420px;height:420px;background:radial-gradient(circle,#BF77F6,transparent); bottom:-100px;right:-100px;animation-delay:-6s; }
+  .orb3 { width:300px;height:300px;background:radial-gradient(circle,#FF6FD8,transparent); top:40%;left:55%;animation-delay:-12s; }
+  @keyframes drift {
+    0%,100%{transform:translate(0,0) scale(1);}
+    33%{transform:translate(30px,-40px) scale(1.05);}
+    66%{transform:translate(-20px,25px) scale(0.95);}
+  }
+
+  /* ── Layout ── */
+  .container { position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:24px 28px; }
+
+  /* ── Header ── */
+  header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius:20px;
+    backdrop-filter:blur(20px);
+    margin-bottom:28px;
+    box-shadow: 0 8px 32px var(--glass-shadow);
+  }
+  .logo { display:flex;align-items:center;gap:12px; }
+  .logo-icon {
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    box-shadow:0 0 20px rgba(125,249,255,0.4);
+  }
+  .logo-text { font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+  .logo-sub { font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase; }
+  .api-badge {
+    display:flex;align-items:center;gap:8px;padding:8px 16px;
+    background:rgba(125,249,255,0.08);border:1px solid rgba(125,249,255,0.2);
+    border-radius:50px;font-size:.8rem;color:var(--accent);cursor:pointer;
+    transition:all .2s;
+  }
+  .api-badge:hover{background:rgba(125,249,255,0.15);}
+  .dot { width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px var(--accent);animation:pulse-dot 2s infinite; }
+  .dot.red{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+  @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.7);}}
+
+  /* ── API Key Modal ── */
+  .modal-overlay {
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+    backdrop-filter:blur(6px);z-index:999;align-items:center;justify-content:center;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal {
+    background:rgba(20,20,40,.95);border:1px solid var(--glass-border);
+    border-radius:24px;padding:36px;width:460px;max-width:95vw;
+    box-shadow:0 24px 64px rgba(0,0,0,.6);
+  }
+  .modal h3{font-family:'Syne',sans-serif;font-size:1.4rem;margin-bottom:8px;}
+  .modal p{color:var(--muted);font-size:.9rem;margin-bottom:24px;line-height:1.6;}
+  .modal input {
+    width:100%;padding:14px 18px;background:rgba(255,255,255,.06);
+    border:1px solid var(--glass-border);border-radius:12px;color:var(--text);
+    font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;
+    transition:border .2s;margin-bottom:16px;
+  }
+  .modal input:focus{border-color:var(--accent);}
+  .btn-primary {
+    width:100%;padding:14px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0a0a1a;font-family:'Syne',sans-serif;font-weight:700;
+    font-size:1rem;cursor:pointer;transition:all .2s;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(125,249,255,.3);}
+
+  /* ── Main Grid ── */
+  .main-grid { display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start; }
+  @media(max-width:960px){.main-grid{grid-template-columns:1fr;}}
+
+  /* ── Glass Card ── */
+  .glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius:20px;
+    backdrop-filter:blur(20px);
+    box-shadow:0 8px 32px var(--glass-shadow);
+    overflow:hidden;
+  }
+  .card-header {
+    padding:18px 24px;border-bottom:1px solid var(--glass-border);
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(255,255,255,.03);
+  }
+  .card-title {
+    font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card-title .icon{font-size:1.1rem;}
+
+  /* ── Upload Zone ── */
+  .upload-zone {
+    margin:24px;border:2px dashed rgba(125,249,255,.25);
+    border-radius:16px;padding:40px 20px;text-align:center;
+    cursor:pointer;transition:all .3s;position:relative;overflow:hidden;
+  }
+  .upload-zone:hover,.upload-zone.drag-over {
+    border-color:var(--accent);background:rgba(125,249,255,.05);
+  }
+  .upload-zone .upload-icon { font-size:2.5rem;margin-bottom:12px;display:block; }
+  .upload-zone h3 { font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:8px; }
+  .upload-zone p { color:var(--muted);font-size:.85rem; }
+  .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  /* ── Spreadsheet Table ── */
+  .table-wrap { overflow:auto;max-height:420px; }
+  .data-table {
+    width:100%;border-collapse:collapse;font-size:.82rem;
+  }
+  .data-table th {
+    position:sticky;top:0;background:rgba(125,249,255,.08);
+    border-bottom:1px solid var(--glass-border);
+    padding:10px 14px;text-align:left;font-family:'Syne',sans-serif;
+    font-size:.78rem;letter-spacing:.06em;color:var(--accent);white-space:nowrap;
+    z-index:2;backdrop-filter:blur(10px);
+  }
+  .data-table td {
+    padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+    color:rgba(240,240,255,.85);white-space:nowrap;transition:background .2s;
+  }
+  .data-table tr:hover td { background:rgba(255,255,255,.04); }
+  .data-table tr.highlighted td { background: var(--highlight-yellow); }
+  .data-table tr.highlighted-red td { background: var(--highlight-red); }
+  .row-num { color:var(--muted);font-size:.75rem;user-select:none; }
+
+  /* ── Stats Bar ── */
+  .stats-bar {
+    display:flex;gap:0;border-top:1px solid var(--glass-border);
+    background:rgba(0,0,0,.2);
+  }
+  .stat { flex:1;padding:12px;text-align:center;border-right:1px solid var(--glass-border); }
+  .stat:last-child{border-right:none;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--accent);}
+  .stat-lbl{font-size:.7rem;color:var(--muted);margin-top:2px;}
+
+  /* ── Sidebar ── */
+  .sidebar { display:flex;flex-direction:column;gap:20px; }
+
+  /* ── AI Command ── */
+  .command-area { padding:20px; }
+  .command-label {
+    font-size:.75rem;color:var(--muted);letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:12px;display:block;
+  }
+  .command-input-wrap {
+    position:relative;margin-bottom:12px;
+  }
+  .command-input {
+    width:100%;padding:14px 18px;padding-right:50px;
+    background:rgba(255,255,255,.06);border:1px solid var(--glass-border);
+    border-radius:14px;color:var(--text);font-family:'DM Sans',sans-serif;
+    font-size:.9rem;outline:none;transition:border .2s;resize:none;
+    line-height:1.5;min-height:56px;
+  }
+  .command-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,249,255,.08);}
+  .command-input::placeholder{color:var(--muted);}
+  .send-btn {
+    position:absolute;right:10px;bottom:10px;width:36px;height:36px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none;border-radius:10px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;font-size:1rem;color:#0a0a1a;
+  }
+  .send-btn:hover{transform:scale(1.1);box-shadow:0 4px 16px rgba(125,249,255,.4);}
+  .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+  /* ── Quick Commands ── */
+  .quick-title{font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+  .quick-chips { display:flex;flex-wrap:wrap;gap:8px; }
+  .chip {
+    padding:6px 12px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);border-radius:50px;
+    font-size:.75rem;color:rgba(240,240,255,.7);cursor:pointer;
+    transition:all .2s;
+  }
+  .chip:hover{background:rgba(125,249,255,.1);border-color:var(--accent);color:var(--accent);}
+
+  /* ── Activity Log ── */
+  .activity-log { padding:16px 20px;max-height:280px;overflow-y:auto; }
+  .log-entry {
+    display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;
+    animation:slideIn .3s ease;
+  }
+  @keyframes slideIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+  .log-dot {
+    width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;
+  }
+  .log-dot.success{background:var(--success);box-shadow:0 0 8px var(--success);}
+  .log-dot.error{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+  .log-dot.info{background:var(--accent2);box-shadow:0 0 8px var(--accent2);}
+  .log-text{font-size:.8rem;color:rgba(240,240,255,.75);line-height:1.5;}
+  .log-time{font-size:.7rem;color:var(--muted);margin-top:2px;}
+
+  /* ── Result JSON ── */
+  .json-preview {
+    margin:0 20px 20px;background:rgba(0,0,0,.3);border-radius:12px;
+    padding:14px;font-family:monospace;font-size:.75rem;
+    color:var(--accent);border:1px solid rgba(125,249,255,.1);
+    max-height:120px;overflow-y:auto;display:none;
+    white-space:pre-wrap;word-break:break-all;
+  }
+  .json-preview.show{display:block;}
+
+  /* ── Download btn ── */
+  .download-btn {
+    margin:0 20px 20px;width:calc(100% - 40px);padding:12px;
+    background:rgba(107,255,184,.08);border:1px solid rgba(107,255,184,.2);
+    border-radius:12px;color:var(--success);font-family:'Syne',sans-serif;
+    font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .download-btn:hover{background:rgba(107,255,184,.15);transform:translateY(-1px);}
+  .download-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+
+  /* ── Loading spinner ── */
+  .spinner {
+    width:18px;height:18px;border:2px solid rgba(125,249,255,.2);
+    border-top:2px solid var(--accent);border-radius:50%;
+    animation:spin .7s linear infinite;display:inline-block;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ── Empty state ── */
+  .empty-state{padding:60px 24px;text-align:center;color:var(--muted);}
+  .empty-state .empty-icon{font-size:3rem;margin-bottom:16px;opacity:.5;}
+  .empty-state p{font-size:.9rem;line-height:1.6;}
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25);}
+
+  /* ── Insight card ── */
+  .insight-banner {
+    margin:0 20px 16px;padding:14px 16px;
+    background:linear-gradient(135deg,rgba(125,249,255,.06),rgba(191,119,246,.06));
+    border:1px solid rgba(125,249,255,.15);border-radius:12px;
+    font-size:.82rem;line-height:1.6;color:rgba(240,240,255,.85);
+    display:none;
+  }
+  .insight-banner.show{display:block;}
+  .insight-banner strong{color:var(--accent);font-family:'Syne',sans-serif;}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h3>🔑 Enter Gemini API Key</h3>
+    <p>Your key is stored only in this session and never sent anywhere except Google's Gemini API.</p>
+    <input type="password" id="apiKeyInput" placeholder="AIza..." />
+    <button class="btn-primary" onclick="saveApiKey()">Save & Continue</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      <div>
+        <div class="logo-text">AI Spreadsheet</div>
+        <div class="logo-sub">Natural Language Data Engine</div>
+      </div>
+    </div>
+    <div class="api-badge" onclick="document.getElementById('apiModal').classList.add('show')">
+      <div class="dot" id="apiDot"></div>
+      <span id="apiStatus">Set API Key</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- Left: Spreadsheet Panel -->
+    <div>
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📊</span> Spreadsheet</div>
+          <span id="fileLabel" style="font-size:.8rem;color:var(--muted);">No file loaded</span>
+        </div>
+
+        <!-- Upload Zone -->
+        <div id="uploadZone" class="upload-zone">
+          <span class="upload-icon">📂</span>
+          <h3>Drop your Excel or CSV file here</h3>
+          <p>Supports .xlsx, .xls, .csv · Click or drag to upload</p>
+          <input type="file" accept=".xlsx,.xls,.csv" id="fileInput" onchange="handleFile(event)" />
+        </div>
+
+        <!-- Table -->
+        <div id="tableWrap" class="table-wrap" style="display:none;">
+          <table class="data-table" id="dataTable"></table>
+        </div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+          <div class="empty-icon">🔍</div>
+          <p>No matching rows found.<br/>Try adjusting your filter condition.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar" id="statsBar" style="display:none;">
+          <div class="stat"><div class="stat-val" id="statRows">0</div><div class="stat-lbl">Rows</div></div>
+          <div class="stat"><div class="stat-val" id="statCols">0</div><div class="stat-lbl">Columns</div></div>
+          <div class="stat"><div class="stat-val" id="statHighlighted">0</div><div class="stat-lbl">Highlighted</div></div>
+          <div class="stat"><div class="stat-val" id="statResult">—</div><div class="stat-lbl">Last Result</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div class="sidebar">
+
+      <!-- AI Command -->
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🤖</span> AI Command</div>
+          <div id="thinkingIndicator" style="display:none;align-items:center;gap:8px;font-size:.8rem;color:var(--accent);">
+            <div class="spinner"></div> Thinking…
+          </div>
+        </div>
+        <div class="command-area">
+          <span class="command-label">Type a natural language command</span>
+          <div class="command-input-wrap">
+            <textarea class="command-input" id="commandInput" rows="2"
+              placeholder='e.g. "Sort salary descending" or "Highlight scores above 80"'
+              onkeydown="handleKey(event)"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="runCommand()">➤</button>
+          </div>
+          <div class="quick-title">Quick Commands</div>
+          <div class="quick-chips" id="quickChips"></div>
+        </div>
+
+        <!-- JSON Preview -->
+        <div class="json-preview" id="jsonPreview"></div>
+
+        <!-- Insight -->
+        <div class="insight-banner" id="insightBanner"></div>
+
+        <!-- Download -->
+        <button class="download-btn" id="downloadBtn" onclick="downloadFile()" disabled>
+          ⬇ Download Modified Excel
+        </button>
+      </div>
+
+      <!-- Activity Log -->
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📋</span> Activity Log</div>
+          <span style="font-size:.75rem;color:var(--muted);cursor:pointer;" onclick="clearLog()">Clear</span>
+        </div>
+        <div class="activity-log" id="activityLog">
+          <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px 0;">
+            No actions yet. Upload a file and start commanding!
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let GEMINI_API_KEY = 'AIzaSyDhXDxdIGoQLnDaQW6RPPu1R4d44XyTm0c';
+let originalData = [];
+let workingData = [];
+let headers = [];
+let highlightedRows = new Set();
+let logEntries = [];
+
+const QUICK_COMMANDS = [
+  'Sort by first column ascending',
+  'Remove duplicate rows',
+  'Remove empty rows',
+  'Find highest value',
+  'Find lowest value',
+  'Summarize first column',
+  'Calculate average',
+  'Calculate sum',
+  'Trim all spaces',
+];
+
+// ── API Key ────────────────────────────────────────────────
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) return;
+  GEMINI_API_KEY = val;
+  document.getElementById('apiModal').classList.remove('show');
+  document.getElementById('apiDot').classList.remove('red');
+  document.getElementById('apiStatus').textContent = 'API Connected';
+  addLog('Gemini API key saved successfully.', 'success');
+}
+
+// ── File Handling ──────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  processFile(file);
+}
+
+document.getElementById('uploadZone').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+});
+document.getElementById('uploadZone').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('drag-over');
+});
+document.getElementById('uploadZone').addEventListener('drop', e => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!json.length) { addLog('File is empty or unreadable.', 'error'); return; }
+
+    headers = Object.keys(json[0]);
+    originalData = json;
+    workingData = JSON.parse(JSON.stringify(json));
+    highlightedRows.clear();
+
+    renderTable(workingData);
+    updateStats();
+    showUploadZone(false);
+    document.getElementById('fileLabel').textContent = file.name;
+    document.getElementById('downloadBtn').disabled = false;
+    document.getElementById('statsBar').style.display = 'flex';
+    addLog(`Loaded "${file.name}" — ${json.length} rows, ${headers.length} columns.`, 'success');
+    buildQuickChips();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showUploadZone(show) {
+  document.getElementById('uploadZone').style.display = show ? 'block' : 'none';
+  document.getElementById('tableWrap').style.display = show ? 'none' : 'block';
+}
+
+// ── Table Render ───────────────────────────────────────────
+function renderTable(data)
