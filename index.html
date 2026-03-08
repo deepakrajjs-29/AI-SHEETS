@@ -3,691 +3,836 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AI Spreadsheet</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>DataMind — AI Spreadsheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg:#08081a;--border:rgba(255,255,255,0.10);
-  --accent:#7DF9FF;--accent2:#BF77F6;--text:#eeeeff;
-  --muted:rgba(220,220,255,0.42);--danger:#FF6B6B;--success:#6BFFB8;
-  --hl-y:rgba(255,230,50,0.25);--hl-r:rgba(255,80,80,0.25);--hl-g:rgba(50,255,140,0.2);
+  --bg:#070710;--s1:#0f0f1e;--s2:#161628;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --a:#a78bfa;--ag:rgba(167,139,250,0.22);
+  --c:#67e8f9;--cg:rgba(103,232,249,0.18);
+  --g:#4ade80;--r:#f87171;--y:#fbbf24;
+  --t:#f1f0ff;--t2:rgba(241,240,255,0.58);--t3:rgba(241,240,255,0.32);
+  --ub:#1e1b4b;--bb:#0f172a;
+  --hy:rgba(251,191,36,0.18);--hr:rgba(248,113,113,0.18);--hg:rgba(74,222,128,0.14);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
-.orbs{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.15;animation:drift 20s ease-in-out infinite;}
-.orb1{width:500px;height:500px;background:radial-gradient(circle,#7DF9FF,transparent);top:-150px;left:-150px;}
-.orb2{width:400px;height:400px;background:radial-gradient(circle,#BF77F6,transparent);bottom:-100px;right:-80px;animation-delay:-7s;}
-.orb3{width:280px;height:280px;background:radial-gradient(circle,#FF6FD8,transparent);top:45%;left:50%;animation-delay:-13s;}
-@keyframes drift{0%,100%{transform:translate(0,0);}40%{transform:translate(25px,-35px);}70%{transform:translate(-20px,20px);}}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t);display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");opacity:.5;}
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.mesh::before{content:'';position:absolute;width:800px;height:800px;
+  background:radial-gradient(ellipse,rgba(167,139,250,0.11) 0%,transparent 65%);
+  top:-250px;left:-200px;animation:mf 28s ease-in-out infinite;}
+.mesh::after{content:'';position:absolute;width:600px;height:600px;
+  background:radial-gradient(ellipse,rgba(103,232,249,0.09) 0%,transparent 65%);
+  bottom:-180px;right:-120px;animation:mf 22s ease-in-out infinite reverse;}
+@keyframes mf{0%,100%{transform:translate(0,0);}40%{transform:translate(35px,-45px);}70%{transform:translate(-25px,28px);}}
 
-header{
-  position:relative;z-index:10;flex-shrink:0;height:62px;
-  display:flex;align-items:center;justify-content:space-between;padding:0 22px;
-  background:rgba(8,8,26,.92);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);
-}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;align-items:center;justify-content:center;font-size:17px;
-  box-shadow:0 0 16px rgba(125,249,255,.3);}
-.logo-text{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.logo-sub{font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
-.badge{display:flex;align-items:center;gap:7px;padding:6px 14px;
-  background:rgba(107,255,184,.07);border:1px solid rgba(107,255,184,.18);
-  border-radius:50px;font-size:.74rem;color:var(--success);}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--success);
-  box-shadow:0 0 8px var(--success);animation:pdot 2s infinite;flex-shrink:0;}
-@keyframes pdot{0%,100%{opacity:1;}50%{opacity:.3;}}
+/* ── HEADER ── */
+header{position:relative;z-index:20;flex-shrink:0;height:54px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:rgba(7,7,16,0.96);border-bottom:1px solid var(--border2);backdrop-filter:blur(20px);}
+.logo{display:flex;align-items:center;gap:9px;}
+.lm{width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--a),var(--c));
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  box-shadow:0 0 18px var(--ag);}
+.ln{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;
+  background:linear-gradient(90deg,var(--a),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lt{font-size:.58rem;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;}
+.hright{display:flex;align-items:center;gap:8px;}
+.hbadge{display:flex;align-items:center;gap:6px;padding:5px 12px;
+  background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.15);
+  border-radius:50px;font-size:.7rem;color:var(--g);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:0 0 7px var(--g);animation:pd 2s infinite;}
+@keyframes pd{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sc{padding:3px 9px;border-radius:50px;font-size:.67rem;
+  background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.14);
+  color:var(--a);font-weight:600;display:none;}
+.sc.on{display:block;}
 
-.workspace{position:relative;z-index:1;display:flex;flex:1;overflow:hidden;}
+/* ── LAYOUT ── */
+.main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden;}
 
-/* Sheet panel */
-.sheet-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);}
-.toolbar{flex-shrink:0;padding:8px 14px;display:flex;align-items:center;
-  justify-content:space-between;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);}
-.file-name{font-size:.77rem;color:var(--muted);font-style:italic;max-width:280px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-.pills{display:flex;gap:7px;flex-shrink:0;}
-.pill{font-size:.68rem;padding:3px 9px;border-radius:50px;
-  background:rgba(125,249,255,.07);border:1px solid rgba(125,249,255,.12);
-  color:var(--accent);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap;}
+/* ── SHEET PANE ── */
+.sheet-pane{flex:0 0 52%;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid var(--border2);}
+.pbar{flex-shrink:0;height:36px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:rgba(12,12,28,0.9);border-bottom:1px solid var(--border);}
+.plabel{font-family:'Syne',sans-serif;font-size:.67rem;font-weight:700;
+  color:var(--t3);letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.flabel{font-size:.7rem;color:var(--t3);font-style:italic;max-width:260px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 
-.upload-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;}
-.upload-zone{border:2px dashed rgba(125,249,255,.22);border-radius:18px;
-  padding:52px 32px;text-align:center;cursor:pointer;transition:all .3s;
-  position:relative;max-width:460px;width:100%;}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(125,249,255,.04);}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.upload-icon{font-size:2.6rem;margin-bottom:12px;display:block;}
-.upload-zone h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:7px;}
-.upload-zone p{color:var(--muted);font-size:.8rem;}
+.upload-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:28px;}
+.dz{max-width:420px;width:100%;border:2px dashed rgba(167,139,250,0.22);border-radius:16px;
+  padding:44px 24px;text-align:center;cursor:pointer;transition:all .3s;position:relative;}
+.dz:hover,.dz.over{border-color:var(--a);background:rgba(167,139,250,0.04);box-shadow:0 0 36px var(--ag);}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:2.2rem;margin-bottom:10px;display:block;}
+.dz h3{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;margin-bottom:5px;}
+.dz p{font-size:.76rem;color:var(--t3);line-height:1.5;}
+.dz p span{color:var(--a);}
 
-.table-container{flex:1;overflow:auto;}
-.data-table{border-collapse:collapse;font-size:.78rem;width:max-content;min-width:100%;}
-.data-table th{position:sticky;top:0;z-index:5;background:#0e0e2a;
-  border-bottom:1px solid rgba(125,249,255,.18);border-right:1px solid var(--border);
-  padding:9px 13px;text-align:left;font-family:'Syne',sans-serif;
-  font-size:.7rem;letter-spacing:.06em;color:var(--accent);white-space:nowrap;}
-.data-table td{padding:7px 13px;border-bottom:1px solid rgba(255,255,255,.03);
-  border-right:1px solid rgba(255,255,255,.02);color:rgba(220,220,255,.8);
-  white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;}
-.data-table tbody tr:hover td{background:rgba(255,255,255,.04);}
-.data-table tr.hl-y td{background:var(--hl-y)!important;}
-.data-table tr.hl-r td{background:var(--hl-r)!important;}
-.data-table tr.hl-g td{background:var(--hl-g)!important;}
-.row-num{color:var(--muted);font-size:.67rem;text-align:right!important;user-select:none;}
+.tscroll{flex:1;overflow:auto;}
+table{border-collapse:collapse;font-size:.74rem;width:max-content;min-width:100%;}
+thead th{position:sticky;top:0;z-index:5;background:#0b0b1f;
+  padding:8px 12px;text-align:left;font-family:'Syne',sans-serif;font-size:.65rem;
+  font-weight:700;letter-spacing:.07em;color:var(--a);
+  border-bottom:1px solid rgba(167,139,250,0.18);border-right:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.026);
+  border-right:1px solid rgba(255,255,255,0.018);color:rgba(241,240,255,0.74);
+  white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:background .1s;}
+tbody tr:hover td{background:rgba(255,255,255,0.03);}
+tr.hy td{background:var(--hy)!important;}tr.hr td{background:var(--hr)!important;}tr.hg td{background:var(--hg)!important;}
+.rn{color:var(--t3);font-size:.62rem;text-align:right!important;user-select:none;padding-right:7px!important;}
+.norows{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px;color:var(--t3);text-align:center;}
+.norows .ni{font-size:2rem;margin-bottom:10px;opacity:.4;}
+.norows p{font-size:.8rem;line-height:1.5;}
 
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:60px;color:var(--muted);text-align:center;}
-.empty-state .ei{font-size:2.4rem;margin-bottom:12px;opacity:.4;}
-.empty-state p{font-size:.84rem;line-height:1.6;}
+/* ── CHAT PANE ── */
+.chat-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.cbar{flex-shrink:0;height:36px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:rgba(12,12,28,0.9);border-bottom:1px solid var(--border);}
+.chat-hist{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+.wmsg{display:flex;gap:8px;align-items:flex-start;}
+.av{width:26px;height:26px;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--a),var(--c));
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  box-shadow:0 0 12px var(--ag);}
+.bub{max-width:84%;padding:9px 13px;border-radius:11px;font-size:.78rem;line-height:1.55;position:relative;}
+.mu{display:flex;justify-content:flex-end;gap:7px;align-items:flex-end;animation:mi .18s ease;}
+.mu .bub{background:var(--ub);border:1px solid rgba(167,139,250,0.2);border-bottom-right-radius:3px;color:rgba(241,240,255,0.88);}
+.uav{width:22px;height:22px;border-radius:6px;flex-shrink:0;
+  background:rgba(167,139,250,0.14);border:1px solid rgba(167,139,250,0.22);
+  display:flex;align-items:center;justify-content:center;font-size:10px;}
+.mb{display:flex;gap:7px;align-items:flex-end;animation:mi .18s ease;}
+.mb .bub{background:var(--bb);border:1px solid var(--border2);border-bottom-left-radius:3px;}
+.mb .bub.success{border-color:rgba(74,222,128,0.2);}
+.mb .bub.error{border-color:rgba(248,113,113,0.2);}
+.mb .bub.info{border-color:rgba(103,232,249,0.18);}
+@keyframes mi{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+.bub strong{color:var(--c);font-weight:600;}
+.bub em{color:var(--t3);font-style:normal;font-size:.73rem;}
+.tag{display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(167,139,250,0.12);color:var(--a);font-size:.7rem;font-weight:600;margin:0 1px;}
+.val{display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(103,232,249,0.1);color:var(--c);font-size:.7rem;font-weight:600;}
+.mt{font-size:.6rem;color:var(--t3);margin-top:2px;}
+.mu .mt{text-align:right;}.mb .mt{text-align:left;margin-left:33px;}
+.rbadges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.rb{padding:2px 8px;border-radius:50px;font-size:.68rem;font-weight:600;
+  background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:var(--g);}
+.rb.w{background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.2);color:var(--y);}
+.rb.r{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.2);color:var(--r);}
 
-/* Sidebar */
-.sidebar{width:300px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;}
+.typing-row{display:none;align-items:center;gap:7px;padding:2px 14px 4px;}
+.typing-row.on{display:flex;}
+.tdots{display:flex;gap:3px;}
+.tdots span{width:5px;height:5px;border-radius:50%;background:var(--a);opacity:.4;animation:td 1.2s infinite;}
+.tdots span:nth-child(2){animation-delay:.2s;}.tdots span:nth-child(3){animation-delay:.4s;}
+@keyframes td{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:1;transform:scale(1.3);}}
+.ttext{font-size:.7rem;color:var(--t3);}
 
-.cmd-panel{flex-shrink:0;padding:13px;border-bottom:1px solid var(--border);}
-.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.panel-title{font-family:'Syne',sans-serif;font-size:.71rem;font-weight:700;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
-
-.input-wrap{position:relative;margin-bottom:9px;}
-.cmd-input{width:100%;padding:10px 44px 10px 12px;
-  background:rgba(255,255,255,.055);border:1px solid var(--border);
-  border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;
-  font-size:.85rem;outline:none;transition:border .2s;
-  resize:none;line-height:1.5;min-height:48px;}
-.cmd-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,249,255,.07);}
-.cmd-input::placeholder{color:var(--muted);}
-.send-btn{position:absolute;right:7px;bottom:7px;width:30px;height:30px;
-  border:none;border-radius:8px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:.88rem;color:#08081a;transition:all .2s;}
-.send-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(125,249,255,.35);}
-
-.chips-label{font-size:.66rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
-.chips{display:flex;flex-wrap:wrap;gap:5px;}
-.chip{padding:4px 9px;background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.09);border-radius:50px;
-  font-size:.68rem;color:rgba(220,220,255,.6);cursor:pointer;transition:all .2s;}
-.chip:hover{background:rgba(125,249,255,.09);border-color:var(--accent);color:var(--accent);}
-
-.result-area{flex-shrink:0;padding:10px 13px;}
-.insight{padding:10px 12px;margin-bottom:8px;
-  background:linear-gradient(135deg,rgba(125,249,255,.05),rgba(191,119,246,.05));
-  border:1px solid rgba(125,249,255,.12);border-radius:9px;
-  font-size:.77rem;line-height:1.5;color:rgba(220,220,255,.8);display:none;}
-.insight.on{display:block;}
-.insight strong{color:var(--accent);font-family:'Syne',sans-serif;}
-
-.dl-btn{width:100%;padding:10px;
-  background:rgba(107,255,184,.07);border:1px solid rgba(107,255,184,.17);
-  border-radius:9px;color:var(--success);font-family:'Syne',sans-serif;
-  font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:7px;}
-.dl-btn:hover:not(:disabled){background:rgba(107,255,184,.13);transform:translateY(-1px);}
-.dl-btn:disabled{opacity:.28;cursor:not-allowed;transform:none;}
-
-.reset-btn{width:100%;padding:8px;margin-top:6px;
-  background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.15);
-  border-radius:9px;color:var(--danger);font-family:'Syne',sans-serif;
-  font-weight:600;font-size:.78rem;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:6px;}
-.reset-btn:hover:not(:disabled){background:rgba(255,107,107,.12);}
-.reset-btn:disabled{opacity:.25;cursor:not-allowed;}
-
-.log-panel{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.log-hdr{flex-shrink:0;padding:9px 13px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,.02);}
-.log-title{font-family:'Syne',sans-serif;font-size:.76rem;font-weight:700;}
-.log-clr{font-size:.67rem;color:var(--muted);cursor:pointer;background:none;border:none;transition:color .2s;}
-.log-clr:hover{color:var(--danger);}
-.log-body{flex:1;overflow-y:auto;padding:9px 13px;}
-.log-entry{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;animation:sli .2s ease;}
-@keyframes sli{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
-.ldot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;}
-.ldot.s{background:var(--success);box-shadow:0 0 6px var(--success);}
-.ldot.e{background:var(--danger);box-shadow:0 0 6px var(--danger);}
-.ldot.i{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
-.log-text{font-size:.74rem;color:rgba(220,220,255,.7);line-height:1.45;}
-.log-time{font-size:.63rem;color:var(--muted);margin-top:1px;}
-.log-empty{color:var(--muted);font-size:.76rem;text-align:center;padding:20px 0;}
+/* ── INPUT AREA ── */
+.iarea{flex-shrink:0;padding:8px 12px;background:rgba(7,7,16,0.97);border-top:1px solid var(--border2);}
+.qrow{display:flex;gap:4px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none;}
+.qrow::-webkit-scrollbar{display:none;}
+.qc{flex-shrink:0;padding:3px 9px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);
+  border-radius:50px;font-size:.66rem;color:var(--t2);cursor:pointer;transition:all .16s;white-space:nowrap;}
+.qc:hover{background:rgba(167,139,250,0.1);border-color:var(--a);color:var(--a);}
+.irow{display:flex;gap:7px;align-items:flex-end;}
+.cta{flex:1;padding:9px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);
+  border-radius:11px;color:var(--t);font-family:'Instrument Sans',sans-serif;font-size:.82rem;
+  outline:none;resize:none;line-height:1.5;min-height:40px;max-height:90px;transition:border .2s,box-shadow .2s;}
+.cta:focus{border-color:var(--a);box-shadow:0 0 0 3px var(--ag);}
+.cta::placeholder{color:var(--t3);}
+.sbtn{width:40px;height:40px;flex-shrink:0;border:none;border-radius:11px;
+  background:linear-gradient(135deg,var(--a),var(--c));cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;color:#070710;font-weight:700;
+  transition:all .2s;box-shadow:0 4px 16px var(--ag);}
+.sbtn:hover{transform:scale(1.07);box-shadow:0 6px 22px var(--ag);}
+.sbtn:active{transform:scale(0.95);}
+.brow{display:flex;gap:6px;margin-top:6px;}
+.ab{flex:1;padding:6px 8px;border:1px solid var(--border2);border-radius:8px;
+  background:rgba(255,255,255,0.03);color:var(--t2);font-family:'Instrument Sans',sans-serif;
+  font-size:.69rem;font-weight:600;cursor:pointer;transition:all .16s;
+  display:flex;align-items:center;justify-content:center;gap:4px;}
+.ab:hover{background:rgba(255,255,255,0.06);color:var(--t);}
+.ab.dl{border-color:rgba(74,222,128,0.2);color:var(--g);}
+.ab.dl:hover{background:rgba(74,222,128,0.08);}
+.ab.rst{border-color:rgba(248,113,113,0.18);color:var(--r);}
+.ab.rst:hover{background:rgba(248,113,113,0.07);}
+.ab:disabled{opacity:.25;cursor:not-allowed;}
 
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
-::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2);}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.09);border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.17);}
 </style>
 </head>
 <body>
-<div class="orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+<div class="mesh"></div>
 
 <header>
   <div class="logo">
-    <div class="logo-icon">✦</div>
-    <div>
-      <div class="logo-text">AI Spreadsheet</div>
-      <div class="logo-sub">Natural Language Engine</div>
-    </div>
+    <div class="lm">⬡</div>
+    <div><div class="ln">DataMind</div><div class="lt">AI Spreadsheet Engine</div></div>
   </div>
-  <div class="badge"><div class="dot"></div><span>No API needed</span></div>
+  <div class="hright">
+    <span class="sc" id="sc1"></span>
+    <span class="sc" id="sc2"></span>
+    <span class="sc" id="sc3"></span>
+    <div class="hbadge"><div class="dot"></div>No API needed</div>
+  </div>
 </header>
 
-<div class="workspace">
-  <div class="sheet-panel">
-    <div class="toolbar">
-      <span class="file-name" id="fileLabel">No file loaded</span>
-      <div class="pills" id="pills" style="display:none;">
-        <span class="pill" id="pRows">0 rows</span>
-        <span class="pill" id="pCols">0 cols</span>
-        <span class="pill" id="pHl" style="display:none;">0 highlighted</span>
+<div class="main">
+  <!-- SHEET -->
+  <div class="sheet-pane">
+    <div class="pbar">
+      <div class="plabel">⊞ Spreadsheet</div>
+      <span class="flabel" id="flabel">Drop a file to begin</span>
+    </div>
+    <div class="upload-wrap" id="uw">
+      <div class="dz" id="dz">
+        <span class="dz-icon">📊</span>
+        <h3>Drop your spreadsheet here</h3>
+        <p>Supports <span>.xlsx</span> · <span>.xls</span> · <span>.csv</span><br/>Click to browse or drag & drop</p>
+        <input type="file" accept=".xlsx,.xls,.csv" id="fi"/>
       </div>
     </div>
-    <div class="upload-wrap" id="uploadWrap">
-      <div class="upload-zone" id="uploadZone">
-        <span class="upload-icon">📂</span>
-        <h3>Drop your Excel or CSV file here</h3>
-        <p>Supports .xlsx, .xls, .csv · Click or drag to upload</p>
-        <input type="file" accept=".xlsx,.xls,.csv" id="fileInput"/>
-      </div>
-    </div>
-    <div class="table-container" id="tableContainer" style="display:none;">
-      <table class="data-table" id="dataTable"></table>
-    </div>
-    <div class="empty-state" id="emptyState" style="display:none;">
-      <div class="ei">🔍</div><p>No matching rows.<br/>Try a different filter.</p>
-    </div>
+    <div class="tscroll" id="ts" style="display:none;"><table id="dt"></table></div>
+    <div class="norows" id="nr" style="display:none;"><div class="ni">🔍</div><p>No rows match.<br/>Try a different command.</p></div>
   </div>
 
-  <div class="sidebar">
-    <div class="cmd-panel">
-      <div class="panel-hdr">
-        <span class="panel-title">⚡ Command</span>
-      </div>
-      <div class="input-wrap">
-        <textarea class="cmd-input" id="cmdInput" rows="2"
-          placeholder='e.g. "sort by name" · "highlight salary > 5000" · "remove duplicates"'
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();runCmd();}"></textarea>
-        <button class="send-btn" onclick="runCmd()" title="Run">➤</button>
-      </div>
-      <div class="chips-label">Quick commands</div>
-      <div class="chips" id="chips"></div>
+  <!-- CHAT -->
+  <div class="chat-pane">
+    <div class="cbar">
+      <div class="plabel">💬 Command History</div>
+      <span style="font-size:.66rem;color:var(--t3);cursor:pointer;" onclick="clearChat()">Clear</span>
     </div>
-
-    <div class="result-area">
-      <div class="insight" id="insight"></div>
-      <button class="dl-btn" id="dlBtn" onclick="downloadFile()" disabled>⬇ Download Excel</button>
-      <button class="reset-btn" id="resetBtn" onclick="resetData()" disabled>↺ Reset to Original</button>
-    </div>
-
-    <div class="log-panel">
-      <div class="log-hdr">
-        <div class="log-title">📋 Activity Log</div>
-        <button class="log-clr" onclick="clearLog()">Clear</button>
+    <div class="chat-hist" id="ch">
+      <div class="wmsg">
+        <div class="av">⬡</div>
+        <div>
+          <div class="bub info">
+            👋 Hi! I'm <strong>DataMind</strong>. Upload a spreadsheet above and command me in plain English.<br/><br/>
+            I understand <strong>50+ commands</strong> including sort, filter, highlight, delete rows/columns, rename, add columns, statistics, search, and much more. Try the quick chips below!
+          </div>
+          <div class="mt">Now</div>
+        </div>
       </div>
-      <div class="log-body" id="logBody">
-        <div class="log-empty">Upload a file to get started!</div>
+    </div>
+    <div class="typing-row" id="tr"><div class="av" style="width:22px;height:22px;font-size:10px;">⬡</div><div class="tdots"><span></span><span></span><span></span></div><span class="ttext">Processing…</span></div>
+
+    <div class="iarea">
+      <!-- QUICK CHIPS - grouped -->
+      <div class="qrow" id="qr">
+        <!-- ROW ops -->
+        <span class="qc" onclick="q('remove first row')">✕ Remove 1st row</span>
+        <span class="qc" onclick="q('remove last row')">✕ Remove last row</span>
+        <span class="qc" onclick="q('remove row 3')">✕ Remove row 3</span>
+        <span class="qc" onclick="q('remove duplicate rows')">✕ Duplicates</span>
+        <span class="qc" onclick="q('remove empty rows')">✕ Empty rows</span>
+        <span class="qc" onclick="q('keep first 10 rows')">⊤ Keep top 10</span>
+        <span class="qc" onclick="q('keep last 10 rows')">⊥ Keep last 10</span>
+        <!-- COL ops -->
+        <span class="qc" onclick="q('remove first column')">✕ Remove 1st col</span>
+        <span class="qc" onclick="q('remove last column')">✕ Remove last col</span>
+        <!-- SORT -->
+        <span class="qc" onclick="q('sort by column 1 ascending')">↑ Sort col 1 A→Z</span>
+        <span class="qc" onclick="q('sort by column 1 descending')">↓ Sort col 1 Z→A</span>
+        <span class="qc" onclick="q('sort by column 2 ascending')">↑ Sort col 2 A→Z</span>
+        <span class="qc" onclick="q('sort by column 2 descending')">↓ Sort col 2 Z→A</span>
+        <span class="qc" onclick="q('sort by column 3 ascending')">↑ Sort col 3 A→Z</span>
+        <!-- HIGHLIGHT -->
+        <span class="qc" onclick="q('clear highlights')">◌ Clear highlights</span>
+        <!-- STATS -->
+        <span class="qc" onclick="q('count rows')">＃ Count</span>
+        <span class="qc" onclick="q('sum all numeric columns')">Σ Sum</span>
+        <span class="qc" onclick="q('average of numeric columns')">~ Avg</span>
+        <span class="qc" onclick="q('find max value')">↑ Max</span>
+        <span class="qc" onclick="q('find min value')">↓ Min</span>
+        <!-- MISC -->
+        <span class="qc" onclick="q('reset to original')">↺ Reset</span>
+        <span class="qc" onclick="q('show column names')">≡ Columns</span>
+        <span class="qc" onclick="q('show summary')">📋 Summary</span>
+      </div>
+      <div class="irow">
+        <textarea class="cta" id="ci" rows="1"
+          placeholder='e.g. "sort by 2nd column A-Z" · "remove column 3" · "highlight salary > 5000" · "rename column Name to Full Name"'
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}"></textarea>
+        <button class="sbtn" onclick="send()">➤</button>
+      </div>
+      <div class="brow">
+        <button class="ab dl" id="dlb" onclick="dlFile()" disabled>⬇ Download Excel</button>
+        <button class="ab" id="dlcsvb" onclick="dlCSV()" disabled>⬇ Download CSV</button>
+        <button class="ab rst" id="rstb" onclick="resetData()" disabled>↺ Reset</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════
-//  STATE  — no API, everything runs locally
-// ════════════════════════════════════════════════════════
-let original = [];
-let data = [];
-let cols = [];
-let hlSet = new Set();   // indices of highlighted rows
-let hlColor = 'y';
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let orig=[], data=[], cols=[], hlSet=new Set(), hlC='y';
 
-const CHIPS = [
-  'Sort by first column A→Z',
-  'Sort by first column Z→A',
-  'Sort by last column ascending',
-  'Remove duplicate rows',
-  'Remove empty rows',
-  'Clear highlights',
-  'Reset to original',
-  'Show top 10 rows',
-  'Count rows',
-  'Sum numeric columns',
-  'Average numeric columns',
-  'Find max value',
-  'Find min value',
-];
+// ════════════════════════════════════════════
+//  FILE LOAD
+// ════════════════════════════════════════════
+document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])loadF(e.target.files[0]);});
+const dzel=document.getElementById('dz');
+dzel.addEventListener('dragover',e=>{e.preventDefault();dzel.classList.add('over');});
+dzel.addEventListener('dragleave',()=>dzel.classList.remove('over'));
+dzel.addEventListener('drop',e=>{e.preventDefault();dzel.classList.remove('over');if(e.dataTransfer.files[0])loadF(e.dataTransfer.files[0]);});
 
-// ════════════════════════════════════════════════════════
-//  FILE LOADING
-// ════════════════════════════════════════════════════════
-document.getElementById('fileInput').addEventListener('change', e => {
-  if (e.target.files[0]) loadFile(e.target.files[0]);
-});
-const uz = document.getElementById('uploadZone');
-uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag-over'); });
-uz.addEventListener('dragleave', () => uz.classList.remove('drag-over'));
-uz.addEventListener('drop', e => {
-  e.preventDefault(); uz.classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
-});
-
-function loadFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws, { defval:'' });
-      if (!json.length) { log('File is empty.', 'e'); return; }
-      cols = Object.keys(json[0]);
-      original = json;
-      data = clone(json);
-      hlSet.clear();
+function loadF(f){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const j=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!j.length){bot('That file appears empty.','error');return;}
+      cols=Object.keys(j[0]);orig=j;data=cl(j);hlSet.clear();
       render(data);
-      document.getElementById('uploadWrap').style.display = 'none';
-      document.getElementById('tableContainer').style.display = 'block';
-      document.getElementById('pills').style.display = 'flex';
-      document.getElementById('fileLabel').textContent = file.name;
-      document.getElementById('dlBtn').disabled = false;
-      document.getElementById('resetBtn').disabled = false;
-      updatePills();
-      buildChips();
-      log(`Loaded "${file.name}" — ${json.length} rows, ${cols.length} cols.`, 's');
-    } catch(err) { log('Parse error: ' + err.message, 'e'); }
+      document.getElementById('uw').style.display='none';
+      document.getElementById('ts').style.display='block';
+      document.getElementById('flabel').textContent=f.name;
+      document.getElementById('dlb').disabled=false;
+      document.getElementById('dlcsvb').disabled=false;
+      document.getElementById('rstb').disabled=false;
+      bot(`✅ Loaded <strong>${esc(f.name)}</strong> — <strong>${j.length}</strong> rows × <strong>${cols.length}</strong> columns.<br/>Columns: ${cols.map(c=>`<span class="tag">${esc(c)}</span>`).join(' ')}`, 'success',
+        [{t:`${j.length} rows`},{t:`${cols.length} cols`}]);
+    }catch(err){bot('Could not parse file: '+err.message,'error');}
   };
-  reader.readAsArrayBuffer(file);
+  r.readAsArrayBuffer(f);
 }
+function cl(d){return JSON.parse(JSON.stringify(d));}
 
-function clone(d) { return JSON.parse(JSON.stringify(d)); }
-
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  RENDER
-// ════════════════════════════════════════════════════════
-function render(rows) {
-  const tc = document.getElementById('tableContainer');
-  const es = document.getElementById('emptyState');
-  if (!rows.length) {
-    tc.style.display = 'none'; es.style.display = 'flex';
-    updatePills(0); return;
-  }
-  tc.style.display = 'block'; es.style.display = 'none';
-  const c = Object.keys(rows[0]);
-  let h = '<thead><tr><th class="row-num">#</th>';
-  c.forEach(k => h += `<th>${esc(k)}</th>`);
-  h += '</tr></thead><tbody>';
-  rows.forEach((row, i) => {
-    const cls = hlSet.has(i) ? ` class="hl-${hlColor}"` : '';
-    h += `<tr${cls}><td class="row-num">${i+1}</td>`;
-    c.forEach(k => h += `<td title="${esc(String(row[k]))}">${esc(String(row[k]))}</td>`);
-    h += '</tr>';
+// ════════════════════════════════════════════
+function render(rows){
+  const ts=document.getElementById('ts'),nr=document.getElementById('nr');
+  if(!rows.length){ts.style.display='none';nr.style.display='flex';updateStats(0);return;}
+  ts.style.display='block';nr.style.display='none';
+  const c=rows.length?Object.keys(rows[0]):cols;
+  let h='<thead><tr><th class="rn">#</th>';
+  c.forEach(k=>h+=`<th>${esc(k)}</th>`);
+  h+='</tr></thead><tbody>';
+  rows.forEach((row,i)=>{
+    const cls=hlSet.has(i)?` class="h${hlC}"`:''
+    h+=`<tr${cls}><td class="rn">${i+1}</td>`;
+    c.forEach(k=>h+=`<td title="${esc(String(row[k]??''))}">${esc(String(row[k]??''))}</td>`);
+    h+='</tr>';
   });
-  h += '</tbody>';
-  document.getElementById('dataTable').innerHTML = h;
-  updatePills(rows.length);
+  document.getElementById('dt').innerHTML=h+'</tbody>';
+  updateStats(rows.length);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function updateStats(n){
+  const r=n!==undefined?n:data.length;
+  const s1=document.getElementById('sc1'),s2=document.getElementById('sc2'),s3=document.getElementById('sc3');
+  s1.textContent=r+' rows';s1.classList.add('on');
+  s2.textContent=(data.length?Object.keys(data[0]).length:cols.length)+' cols';s2.classList.add('on');
+  if(hlSet.size){s3.textContent=hlSet.size+' hl';s3.classList.add('on');}else s3.classList.remove('on');
 }
 
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ════════════════════════════════════════════
+//  SEND
+// ════════════════════════════════════════════
+function q(t){document.getElementById('ci').value=t;send();}
+function send(){
+  const raw=document.getElementById('ci').value.trim();
+  if(!raw)return;
+  userMsg(raw);document.getElementById('ci').value='';
+  if(!data.length&&!orig.length){bot('Please upload a spreadsheet first!','error');return;}
+  typing(true);
+  setTimeout(()=>{typing(false);runCmd(raw);},280);
 }
 
-function updatePills(count) {
-  document.getElementById('pRows').textContent = (count !== undefined ? count : data.length) + ' rows';
-  document.getElementById('pCols').textContent = cols.length + ' cols';
-  const hp = document.getElementById('pHl');
-  if (hlSet.size) { hp.style.display='inline-flex'; hp.textContent = hlSet.size + ' highlighted'; }
-  else hp.style.display = 'none';
-}
+// ════════════════════════════════════════════
+//  COMMAND ENGINE — 50+ operations
+// ════════════════════════════════════════════
+function runCmd(raw){
+  const cmd=raw.toLowerCase().trim();
 
-function buildChips() {
-  const c = document.getElementById('chips');
-  c.innerHTML = '';
-  CHIPS.forEach(q => {
-    const d = document.createElement('div');
-    d.className = 'chip'; d.textContent = q;
-    d.onclick = () => { document.getElementById('cmdInput').value = q; runCmd(); };
-    c.appendChild(d);
-  });
-}
+  // ── RESET ──────────────────────────────
+  if(/\breset\b|\brestore\b|\boriginal\b/.test(cmd)){resetData();return;}
 
-// ════════════════════════════════════════════════════════
-//  COMMAND PARSER  (pure JS, no AI API)
-// ════════════════════════════════════════════════════════
-function runCmd() {
-  const raw = document.getElementById('cmdInput').value.trim();
-  if (!raw) return;
-  if (!data.length && !original.length) { log('Upload a file first.', 'e'); return; }
-  const cmd = raw.toLowerCase();
-  log(`▶ "${raw}"`, 'i');
-  document.getElementById('cmdInput').value = '';
-
-  // ── RESET ───────────────────────────────────────────
-  if (/reset|restore|original/.test(cmd)) {
-    resetData(); return;
+  // ── SHOW COLUMN NAMES ──────────────────
+  if(/\bcolumn names?\b|\bshow columns?\b|\blist columns?\b/.test(cmd)){
+    const c=data.length?Object.keys(data[0]):cols;
+    bot(`<strong>${c.length}</strong> columns: ${c.map((k,i)=>`<span class="tag">${i+1}. ${esc(k)}</span>`).join(' ')}`,'info',
+      [{t:`${c.length} columns`}]);return;
   }
 
-  // ── SHOW TOP N ──────────────────────────────────────
-  const topMatch = cmd.match(/(?:show|display|top|first)\s+(\d+)/);
-  if (topMatch) {
-    const n = parseInt(topMatch[1]);
-    data = clone(original).slice(0, n);
-    hlSet.clear(); render(data);
-    insight(`Showing top <strong>${n}</strong> rows.`); log(`Showing top ${n} rows.`, 's'); return;
+  // ── SUMMARY ────────────────────────────
+  if(/\bsummar\b|\boverview\b|\binfo\b|\bstats?\b$/.test(cmd)){
+    const c=data.length?Object.keys(data[0]):cols;
+    const nc=numCols(data);
+    bot(`📋 <strong>Summary</strong><br/>Rows: <strong>${data.length}</strong> · Cols: <strong>${c.length}</strong> · Numeric cols: <strong>${nc.length}</strong><br/>Columns: ${c.map(k=>`<span class="tag">${esc(k)}</span>`).join(' ')}`,'info',
+      [{t:`${data.length} rows`},{t:`${c.length} cols`},{t:`${nc.length} numeric`}]);return;
   }
 
-  // ── COUNT ────────────────────────────────────────────
-  if (/\bcount\b/.test(cmd)) {
-    insight(`Total rows: <strong>${data.length}</strong> &nbsp;·&nbsp; Total columns: <strong>${cols.length}</strong>`);
-    log(`Count: ${data.length} rows, ${cols.length} cols.`, 's'); return;
+  // ── REMOVE FIRST ROW ───────────────────
+  if(/remove\s+(?:the\s+)?first\s+row|delete\s+(?:the\s+)?first\s+row|drop\s+(?:the\s+)?first\s+row/.test(cmd)){
+    if(!data.length){bot('No data.','error');return;}
+    data.splice(0,1);hlSet.clear();render(data);
+    bot(`Removed the <strong>first row</strong>. <strong>${data.length}</strong> rows remain.`,'success');return;
   }
 
-  // ── SUM ──────────────────────────────────────────────
-  if (/\bsum\b/.test(cmd)) {
-    const colArg = findCol(cmd);
-    const results = sumCols(data, colArg ? [colArg] : numericCols(data));
-    const txt = Object.entries(results).map(([k,v]) => `${k}: <strong>${v.toLocaleString()}</strong>`).join('  ·  ');
-    insight('Sums — ' + txt);
-    log('Sum: ' + Object.entries(results).map(([k,v])=>`${k}=${v}`).join(', '), 's'); return;
+  // ── REMOVE LAST ROW ────────────────────
+  if(/remove\s+(?:the\s+)?last\s+row|delete\s+(?:the\s+)?last\s+row/.test(cmd)){
+    if(!data.length){bot('No data.','error');return;}
+    data.splice(data.length-1,1);hlSet.clear();render(data);
+    bot(`Removed the <strong>last row</strong>. <strong>${data.length}</strong> rows remain.`,'success');return;
   }
 
-  // ── AVERAGE ─────────────────────────────────────────
-  if (/\b(avg|average|mean)\b/.test(cmd)) {
-    const colArg = findCol(cmd);
-    const nc = colArg ? [colArg] : numericCols(data);
-    const results = {};
-    nc.forEach(c => {
-      const vals = data.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
-      if (vals.length) results[c] = +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2);
-    });
-    const txt = Object.entries(results).map(([k,v]) => `${k}: <strong>${v.toLocaleString()}</strong>`).join('  ·  ');
-    insight('Averages — ' + txt);
-    log('Avg: ' + Object.entries(results).map(([k,v])=>`${k}=${v}`).join(', '), 's'); return;
+  // ── REMOVE ROW N ───────────────────────
+  const rrm=cmd.match(/(?:remove|delete|drop)\s+row[s]?\s+(\d+)(?:\s*(?:to|-)\s*(\d+))?/);
+  if(rrm){
+    const a=parseInt(rrm[1]),b=rrm[2]?parseInt(rrm[2]):a;
+    const r1=Math.min(a,b)-1,r2=Math.max(a,b);
+    if(r1<0||r2>data.length){bot(`Row number out of range (1–${data.length}).`,'error');return;}
+    const removed=r2-r1;
+    data.splice(r1,removed);hlSet.clear();render(data);
+    bot(`Removed <strong>${removed}</strong> row${removed>1?'s':''} (${a}${b!==a?'–'+b:''}). <strong>${data.length}</strong> rows remain.`,'success');return;
   }
 
-  // ── MAX ──────────────────────────────────────────────
-  if (/\b(max|maximum|highest|largest)\b/.test(cmd)) {
-    const colArg = findCol(cmd);
-    const nc = colArg ? [colArg] : numericCols(data);
-    const results = {};
-    nc.forEach(c => {
-      const vals = data.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
-      if (vals.length) results[c] = Math.max(...vals);
-    });
-    const txt = Object.entries(results).map(([k,v]) => `${k}: <strong>${v.toLocaleString()}</strong>`).join('  ·  ');
-    insight('Max values — ' + txt);
-    log('Max: ' + Object.entries(results).map(([k,v])=>`${k}=${v}`).join(', '), 's'); return;
+  // ── REMOVE FIRST COLUMN ────────────────
+  if(/remove\s+(?:the\s+)?first\s+col|delete\s+(?:the\s+)?first\s+col/.test(cmd)){
+    if(!data.length){bot('No data.','error');return;}
+    const c=Object.keys(data[0])[0];
+    data=data.map(r=>{const n={...r};delete n[c];return n;});
+    cols=Object.keys(data[0]);hlSet.clear();render(data);
+    bot(`Removed first column: <span class="tag">${esc(c)}</span>. <strong>${cols.length}</strong> columns remain.`,'success');return;
   }
 
-  // ── MIN ──────────────────────────────────────────────
-  if (/\b(min|minimum|lowest|smallest)\b/.test(cmd)) {
-    const colArg = findCol(cmd);
-    const nc = colArg ? [colArg] : numericCols(data);
-    const results = {};
-    nc.forEach(c => {
-      const vals = data.map(r => parseFloat(r[c])).filter(v => !isNaN(v));
-      if (vals.length) results[c] = Math.min(...vals);
-    });
-    const txt = Object.entries(results).map(([k,v]) => `${k}: <strong>${v.toLocaleString()}</strong>`).join('  ·  ');
-    insight('Min values — ' + txt);
-    log('Min: ' + Object.entries(results).map(([k,v])=>`${k}=${v}`).join(', '), 's'); return;
+  // ── REMOVE LAST COLUMN ─────────────────
+  if(/remove\s+(?:the\s+)?last\s+col|delete\s+(?:the\s+)?last\s+col/.test(cmd)){
+    if(!data.length){bot('No data.','error');return;}
+    const ck=Object.keys(data[0]);const c=ck[ck.length-1];
+    data=data.map(r=>{const n={...r};delete n[c];return n;});
+    cols=Object.keys(data[0]);hlSet.clear();render(data);
+    bot(`Removed last column: <span class="tag">${esc(c)}</span>. <strong>${cols.length}</strong> columns remain.`,'success');return;
   }
 
-  // ── REMOVE DUPLICATES ────────────────────────────────
-  if (/duplicate/.test(cmd)) {
-    const before = data.length;
-    const seen = new Set();
-    data = data.filter(row => {
-      const key = JSON.stringify(row);
-      if (seen.has(key)) return false;
-      seen.add(key); return true;
-    });
-    hlSet.clear(); render(data);
-    insight(`Removed <strong>${before - data.length}</strong> duplicate rows. <strong>${data.length}</strong> remain.`);
-    log(`Removed ${before - data.length} duplicates.`, 's'); return;
+  // ── REMOVE COLUMN N (by number) ────────
+  const rcn=cmd.match(/(?:remove|delete|drop)\s+column[s]?\s+(?:number\s+)?(\d+)/);
+  if(rcn){
+    const idx=parseInt(rcn[1])-1;
+    const ck=data.length?Object.keys(data[0]):cols;
+    if(idx<0||idx>=ck.length){bot(`Column ${idx+1} doesn't exist (1–${ck.length}).`,'error');return;}
+    const c=ck[idx];
+    data=data.map(r=>{const n={...r};delete n[c];return n;});
+    cols=Object.keys(data[0]||{});hlSet.clear();render(data);
+    bot(`Removed column ${idx+1}: <span class="tag">${esc(c)}</span>.`,'success');return;
   }
 
-  // ── REMOVE EMPTY ROWS ────────────────────────────────
-  if (/empty|blank/.test(cmd)) {
-    const before = data.length;
-    data = data.filter(row => Object.values(row).some(v => String(v).trim() !== ''));
-    hlSet.clear(); render(data);
-    insight(`Removed <strong>${before - data.length}</strong> empty rows.`);
-    log(`Removed ${before - data.length} empty rows.`, 's'); return;
+  // ── REMOVE COLUMN BY NAME ──────────────
+  const rcname=cmd.match(/(?:remove|delete|drop)\s+(?:the\s+)?(?:column\s+)?["']?([a-z0-9 _\-]+)["']?\s+column/);
+  if(rcname){
+    const fc=findColStr(rcname[1]);
+    if(!fc){bot(`Could not find column matching "${rcname[1]}".`,'error');return;}
+    data=data.map(r=>{const n={...r};delete n[fc];return n;});
+    cols=Object.keys(data[0]||{});hlSet.clear();render(data);
+    bot(`Removed column <span class="tag">${esc(fc)}</span>.`,'success');return;
   }
 
-  // ── CLEAR HIGHLIGHTS ─────────────────────────────────
-  if (/clear.*(highlight|color)|remove.*(highlight|color)/.test(cmd)) {
-    hlSet.clear(); render(data);
-    insight('Highlights cleared.'); log('Highlights cleared.', 's'); return;
+  // ── RENAME COLUMN ──────────────────────
+  const ren=cmd.match(/rename\s+(?:column\s+)?["']?(.+?)["']?\s+to\s+["']?(.+?)["']?$/);
+  if(ren){
+    const oldN=findColStr(ren[1].trim());
+    const newN=ren[2].trim();
+    if(!oldN){bot(`Column "${ren[1]}" not found.`,'error');return;}
+    data=data.map(r=>{const n={};Object.keys(r).forEach(k=>{n[k===oldN?newN:k]=r[k];});return n;});
+    cols=Object.keys(data[0]||{});hlSet.clear();render(data);
+    bot(`Renamed <span class="tag">${esc(oldN)}</span> → <span class="tag">${esc(newN)}</span>.`,'success');return;
   }
 
-  // ── SORT ─────────────────────────────────────────────
-  if (/\bsort\b/.test(cmd)) {
-    const desc = /desc|z.{0,3}a|largest|highest|reverse/.test(cmd);
-    const colName = findCol(cmd) || cols[determineLastCol(cmd)];
-    if (!colName) { log('Could not determine column to sort.', 'e'); return; }
-    data.sort((a, b) => {
-      const av = a[colName], bv = b[colName];
-      const d = desc ? -1 : 1;
-      if (!isNaN(av) && !isNaN(bv)) return d * (Number(av) - Number(bv));
-      return d * String(av).localeCompare(String(bv));
-    });
-    hlSet.clear(); render(data);
-    insight(`Sorted by <strong>${colName}</strong> (${desc ? 'descending' : 'ascending'}).`);
-    log(`Sorted by "${colName}" ${desc?'desc':'asc'}.`, 's'); return;
+  // ── ADD COLUMN ─────────────────────────
+  const addcol=cmd.match(/add\s+(?:a\s+)?(?:new\s+)?column\s+(?:called\s+|named\s+)?["']?([a-z0-9 _\-]+)["']?(?:\s+with\s+(?:value\s+)?["']?(.+?)["']?)?$/);
+  if(addcol){
+    const name=addcol[1].trim();
+    const val=addcol[2]||'';
+    data=data.map(r=>({...r,[name]:val}));
+    cols=Object.keys(data[0]);hlSet.clear();render(data);
+    bot(`Added new column <span class="tag">${esc(name)}</span>${val?` with default value <span class="val">${esc(val)}</span>`:''}. <strong>${cols.length}</strong> columns total.`,'success');return;
   }
 
-  // ── FILTER ───────────────────────────────────────────
-  if (/\bfilter\b|\bshow only\b|\bwhere\b|\bkeep\b/.test(cmd)) {
-    const result = parseCondition(cmd);
-    if (!result) { log('Could not parse filter condition.', 'e'); insight('Could not understand the filter. Try: <strong>filter where salary > 5000</strong>'); return; }
-    const before = data.length;
-    data = data.filter(row => evalCond(row, result));
-    hlSet.clear(); render(data);
-    insight(`Filter applied: <strong>${result.col} ${result.op} ${result.val}</strong> — <strong>${data.length}</strong> rows match.`);
-    log(`Filtered "${result.col} ${result.op} ${result.val}": ${data.length}/${before} rows.`, 's'); return;
+  // ── KEEP FIRST N ROWS ──────────────────
+  const kfm=cmd.match(/(?:keep|show|top|first)\s+(?:only\s+)?(\d+)\s+rows?/);
+  if(kfm){
+    const n=parseInt(kfm[1]);
+    data=cl(orig).slice(0,n);hlSet.clear();render(data);
+    bot(`Kept first <strong>${n}</strong> rows.`,'success',[{t:`${data.length} rows`}]);return;
   }
 
-  // ── HIGHLIGHT ────────────────────────────────────────
-  if (/\bhighlight\b|\bmark\b|\bcolor\b/.test(cmd)) {
-    hlColor = /red/.test(cmd) ? 'r' : /green/.test(cmd) ? 'g' : 'y';
-    const result = parseCondition(cmd);
-    if (!result) {
-      // Highlight all
-      hlSet.clear();
-      data.forEach((_, i) => hlSet.add(i));
-      render(data);
-      insight(`Highlighted all <strong>${data.length}</strong> rows.`);
-      log(`Highlighted all rows.`, 's'); return;
+  // ── KEEP LAST N ROWS ───────────────────
+  const klm=cmd.match(/(?:keep|show)\s+(?:only\s+)?last\s+(\d+)\s+rows?/);
+  if(klm){
+    const n=parseInt(klm[1]);
+    data=cl(orig).slice(-n);hlSet.clear();render(data);
+    bot(`Kept last <strong>${n}</strong> rows.`,'success',[{t:`${data.length} rows`}]);return;
+  }
+
+  // ── REMOVE DUPLICATES ──────────────────
+  if(/duplicate/.test(cmd)){
+    const before=data.length;const seen=new Set();
+    data=data.filter(r=>{const k=JSON.stringify(r);if(seen.has(k))return false;seen.add(k);return true;});
+    hlSet.clear();render(data);
+    bot(`Removed <strong>${before-data.length}</strong> duplicate rows. <strong>${data.length}</strong> unique rows remain.`,'success',
+      [{t:`${before-data.length} removed`},{t:`${data.length} remain`}]);return;
+  }
+
+  // ── REMOVE EMPTY ROWS ──────────────────
+  if(/empty\s+rows?|blank\s+rows?/.test(cmd)){
+    const before=data.length;
+    data=data.filter(r=>Object.values(r).some(v=>String(v).trim()!==''));
+    hlSet.clear();render(data);
+    bot(`Removed <strong>${before-data.length}</strong> empty rows. <strong>${data.length}</strong> rows remain.`,'success');return;
+  }
+
+  // ── REMOVE ROWS MATCHING CONDITION ─────
+  const drc=cmd.match(/(?:remove|delete|drop)\s+rows?\s+(?:where|with|that)\s+(.+)/);
+  if(drc){
+    const cond=parseCond(drc[1]);
+    if(!cond){bot(`Couldn't parse condition. Try: <em>remove rows where score < 50</em>`,'error');return;}
+    const before=data.length;
+    data=data.filter(r=>!evalC(r,cond));hlSet.clear();render(data);
+    bot(`Removed <strong>${before-data.length}</strong> rows where <span class="tag">${esc(cond.col)}</span> <strong>${cond.op}</strong> <span class="val">${esc(cond.val)}</span>. <strong>${data.length}</strong> remain.`,'success');return;
+  }
+
+  // ── CLEAR HIGHLIGHTS ───────────────────
+  if(/clear\s+(?:all\s+)?h[il]|remove\s+h[il]/.test(cmd)){
+    hlSet.clear();render(data);bot('All highlights cleared.','info');return;
+  }
+
+  // ── COUNT ──────────────────────────────
+  if(/\bcount\b/.test(cmd)){
+    const c=data.length?Object.keys(data[0]).length:cols.length;
+    bot(`<strong>${data.length}</strong> rows · <strong>${c}</strong> columns`,'info',
+      [{t:`${data.length} rows`},{t:`${c} cols`}]);return;
+  }
+
+  // ── SUM ────────────────────────────────
+  if(/\bsum\b/.test(cmd)){
+    const col=findCol(cmd);const nc=col?[col]:numCols(data);
+    if(!nc.length){bot('No numeric columns found.','error');return;}
+    const res={};nc.forEach(c=>{res[c]=data.reduce((a,r)=>a+(parseFloat(r[c])||0),0);});
+    bot('Σ Sum results:<br/>'+Object.entries(res).map(([k,v])=>`<span class="tag">${esc(k)}</span> → <span class="val">${fmt(v)}</span>`).join('  '),'success',
+      Object.entries(res).map(([k,v])=>({t:`${k}: ${fmt(v)}`})));return;
+  }
+
+  // ── AVERAGE ────────────────────────────
+  if(/\b(avg|average|mean)\b/.test(cmd)){
+    const col=findCol(cmd);const nc=col?[col]:numCols(data);
+    if(!nc.length){bot('No numeric columns found.','error');return;}
+    const res={};nc.forEach(c=>{const v=data.map(r=>parseFloat(r[c])).filter(v=>!isNaN(v));if(v.length)res[c]=+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2);});
+    bot('~ Average results:<br/>'+Object.entries(res).map(([k,v])=>`<span class="tag">${esc(k)}</span> → <span class="val">${v}</span>`).join('  '),'success');return;
+  }
+
+  // ── MAX ────────────────────────────────
+  if(/\b(max|maximum|highest|largest)\b/.test(cmd)){
+    const col=findCol(cmd);const nc=col?[col]:numCols(data);
+    if(!nc.length){bot('No numeric columns found.','error');return;}
+    const res={};nc.forEach(c=>{const v=data.map(r=>parseFloat(r[c])).filter(v=>!isNaN(v));if(v.length)res[c]=Math.max(...v);});
+    bot('↑ Maximum values:<br/>'+Object.entries(res).map(([k,v])=>`<span class="tag">${esc(k)}</span> → <span class="val">${fmt(v)}</span>`).join('  '),'success');return;
+  }
+
+  // ── MIN ────────────────────────────────
+  if(/\b(min|minimum|lowest|smallest)\b/.test(cmd)){
+    const col=findCol(cmd);const nc=col?[col]:numCols(data);
+    if(!nc.length){bot('No numeric columns found.','error');return;}
+    const res={};nc.forEach(c=>{const v=data.map(r=>parseFloat(r[c])).filter(v=>!isNaN(v));if(v.length)res[c]=Math.min(...v);});
+    bot('↓ Minimum values:<br/>'+Object.entries(res).map(([k,v])=>`<span class="tag">${esc(k)}</span> → <span class="val">${fmt(v)}</span>`).join('  '),'success');return;
+  }
+
+  // ── MEDIAN ─────────────────────────────
+  if(/\bmedian\b/.test(cmd)){
+    const col=findCol(cmd);const nc=col?[col]:numCols(data);
+    const res={};nc.forEach(c=>{const v=data.map(r=>parseFloat(r[c])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+      if(v.length){const m=Math.floor(v.length/2);res[c]=v.length%2?v[m]:+((v[m-1]+v[m])/2).toFixed(2);}});
+    bot('Median values:<br/>'+Object.entries(res).map(([k,v])=>`<span class="tag">${esc(k)}</span> → <span class="val">${v}</span>`).join('  '),'success');return;
+  }
+
+  // ── SORT BY COLUMN NUMBER ──────────────
+  const scn=cmd.match(/sort\s+(?:by\s+)?(?:column\s+)?(?:number\s+)?(?:col\s+)?(\d+)(?:st|nd|rd|th)?\s*(asc|desc|ascending|descending|a[-–]z|z[-–]a)?/);
+  if(scn){
+    const idx=parseInt(scn[1])-1;
+    const ck=data.length?Object.keys(data[0]):cols;
+    if(idx<0||idx>=ck.length){bot(`Column ${idx+1} doesn't exist.`,'error');return;}
+    const col=ck[idx];
+    const desc=/desc|z[-–]a/.test(scn[2]||'');
+    data.sort((a,b)=>{const av=a[col],bv=b[col],d=desc?-1:1;
+      if(!isNaN(av)&&!isNaN(bv))return d*(Number(av)-Number(bv));
+      return d*String(av).localeCompare(String(bv));});
+    hlSet.clear();render(data);
+    bot(`Sorted by column ${idx+1} <span class="tag">${esc(col)}</span> (${desc?'Z→A / Descending':'A→Z / Ascending'}).`,'success');return;
+  }
+
+  // ── SORT BY COLUMN NAME ────────────────
+  if(/\bsort\b/.test(cmd)){
+    const desc=/desc|z[-–]a|largest|reverse/.test(cmd);
+    const col=findCol(cmd)||(data.length?Object.keys(data[0])[0]:cols[0]);
+    data.sort((a,b)=>{const av=a[col],bv=b[col],d=desc?-1:1;
+      if(!isNaN(av)&&!isNaN(bv))return d*(Number(av)-Number(bv));
+      return d*String(av).localeCompare(String(bv));});
+    hlSet.clear();render(data);
+    bot(`Sorted by <span class="tag">${esc(col)}</span> ${desc?'Z→A (Descending)':'A→Z (Ascending)'}.`,'success');return;
+  }
+
+  // ── FILTER ─────────────────────────────
+  if(/\bfilter\b|\bshow only\b|\bwhere\b|\bkeep rows\b/.test(cmd)){
+    const cond=parseCond(cmd);
+    if(!cond){bot(`Couldn't parse filter. Try: <em>filter where salary > 5000</em>`,'error');return;}
+    const before=data.length;
+    data=data.filter(r=>evalC(r,cond));hlSet.clear();render(data);
+    bot(`Filter: <span class="tag">${esc(cond.col)}</span> <strong>${cond.op}</strong> <span class="val">${esc(cond.val)}</span><br/><strong>${data.length}</strong> of ${before} rows match.`,'success',
+      [{t:`${data.length} rows`},{t:`${before-data.length} removed`,w:true}]);return;
+  }
+
+  // ── HIGHLIGHT ──────────────────────────
+  if(/\bhighlight\b|\bmark\b|\bcolor\b|\bcolour\b/.test(cmd)){
+    hlC=/red/.test(cmd)?'r':/green/.test(cmd)?'g':'y';
+    const cond=parseCond(cmd);
+    if(!cond){
+      hlSet.clear();data.forEach((_,i)=>hlSet.add(i));render(data);
+      bot(`Highlighted all <strong>${data.length}</strong> rows.`,'success');return;
     }
-    hlSet.clear();
-    data.forEach((row, i) => { if (evalCond(row, result)) hlSet.add(i); });
-    render(data);
-    insight(`Highlighted <strong>${hlSet.size}</strong> rows where <strong>${result.col} ${result.op} ${result.val}</strong>.`);
-    log(`Highlighted ${hlSet.size} rows.`, 's'); return;
+    hlSet.clear();data.forEach((r,i)=>{try{if(evalC(r,cond))hlSet.add(i);}catch{}});render(data);
+    const cn=hlC==='r'?'red':hlC==='g'?'green':'yellow';
+    bot(`Highlighted <strong>${hlSet.size}</strong> rows in <strong>${cn}</strong> where <span class="tag">${esc(cond.col)}</span> <strong>${cond.op}</strong> <span class="val">${esc(cond.val)}</span>.`,'success',
+      [{t:`${hlSet.size} highlighted`}]);return;
   }
 
-  // ── SEARCH / FIND ────────────────────────────────────
-  if (/\b(search|find|contains?|has)\b/.test(cmd)) {
-    // Extract quoted term or last word
-    const quoted = cmd.match(/["'](.+?)["']/);
-    const term = quoted ? quoted[1] : cmd.split(/\s+/).pop();
-    hlColor = 'y';
-    hlSet.clear();
-    data.forEach((row, i) => {
-      if (Object.values(row).some(v => String(v).toLowerCase().includes(term.toLowerCase()))) hlSet.add(i);
-    });
+  // ── SEARCH / FIND ──────────────────────
+  if(/\b(search|find|contains?|has)\b/.test(cmd)){
+    const qt=cmd.match(/["'](.+?)["']/);
+    const term=qt?qt[1]:cmd.replace(/search|find|contains?|has|\bfor\b/g,'').trim().split(/\s+/).pop();
+    hlC='y';hlSet.clear();
+    data.forEach((r,i)=>{if(Object.values(r).some(v=>String(v).toLowerCase().includes(term.toLowerCase())))hlSet.add(i);});
     render(data);
-    insight(`Found <strong>${hlSet.size}</strong> rows containing "<strong>${term}</strong>".`);
-    log(`Search "${term}": ${hlSet.size} matches.`, 's'); return;
+    bot(`Found <strong>${hlSet.size}</strong> rows containing "<strong>${esc(term)}</strong>".`,'success',[{t:`${hlSet.size} matches`}]);return;
   }
 
-  // ── COLUMN STATS ────────────────────────────────────
-  const colOnly = findCol(cmd);
-  if (colOnly && /stat|info|detail|summar/.test(cmd)) {
-    const vals = data.map(r => parseFloat(r[colOnly])).filter(v => !isNaN(v));
-    if (vals.length) {
-      const sum = vals.reduce((a,b)=>a+b,0);
-      const avg = (sum/vals.length).toFixed(2);
-      insight(`<strong>${colOnly}</strong> — Count: <strong>${vals.length}</strong> · Sum: <strong>${sum.toLocaleString()}</strong> · Avg: <strong>${avg}</strong> · Min: <strong>${Math.min(...vals)}</strong> · Max: <strong>${Math.max(...vals)}</strong>`);
-      log(`Stats for "${colOnly}" done.`, 's');
-    } else {
-      insight(`Column <strong>${colOnly}</strong> has no numeric values.`);
-      log(`No numeric values in "${colOnly}".`, 'e');
-    }
+  // ── COLUMN STATS ───────────────────────
+  const colOnly=findCol(cmd);
+  if(colOnly&&/stat|analys|detail|info/.test(cmd)){
+    const v=data.map(r=>parseFloat(r[colOnly])).filter(v=>!isNaN(v));
+    if(v.length){
+      const sum=v.reduce((a,b)=>a+b,0);
+      const avg=(sum/v.length).toFixed(2);
+      const sorted=[...v].sort((a,b)=>a-b);
+      const med=v.length%2?sorted[Math.floor(v.length/2)]:((sorted[v.length/2-1]+sorted[v.length/2])/2).toFixed(2);
+      bot(`Stats for <span class="tag">${esc(colOnly)}</span>`,'success',
+        [{t:`Count: ${v.length}`},{t:`Sum: ${fmt(sum)}`},{t:`Avg: ${avg}`},{t:`Median: ${med}`},{t:`Min: ${Math.min(...v)}`},{t:`Max: ${Math.max(...v)}`}]);
+    }else bot(`Column <span class="tag">${esc(colOnly)}</span> has no numeric values.`,'error');
     return;
   }
 
-  // ── FALLBACK ─────────────────────────────────────────
-  insight(`⚠️ Command not recognised. Try: <em>sort by [column]</em>, <em>filter where [col] > [value]</em>, <em>highlight [col] = [value]</em>, <em>remove duplicates</em>, <em>sum</em>, <em>average</em>, <em>max</em>, <em>min</em>`);
-  log('Command not recognised.', 'e');
+  // ── TRIM WHITESPACE ────────────────────
+  if(/\btrim\b/.test(cmd)){
+    data=data.map(r=>{const n={};Object.keys(r).forEach(k=>{n[k]=typeof r[k]==='string'?r[k].trim():r[k];});return n;});
+    render(data);bot('Trimmed all whitespace from text cells.','success');return;
+  }
+
+  // ── UPPERCASE ──────────────────────────
+  if(/\bupper\b|\buppercase\b/.test(cmd)){
+    const col=findCol(cmd);
+    data=data.map(r=>{const n={...r};if(col)n[col]=String(n[col]).toUpperCase();
+      else Object.keys(n).forEach(k=>{if(typeof n[k]==='string')n[k]=n[k].toUpperCase();});return n;});
+    render(data);bot(col?`Column <span class="tag">${esc(col)}</span> converted to UPPERCASE.`:'All text converted to UPPERCASE.','success');return;
+  }
+
+  // ── LOWERCASE ──────────────────────────
+  if(/\blower\b|\blowercase\b/.test(cmd)){
+    const col=findCol(cmd);
+    data=data.map(r=>{const n={...r};if(col)n[col]=String(n[col]).toLowerCase();
+      else Object.keys(n).forEach(k=>{if(typeof n[k]==='string')n[k]=n[k].toLowerCase();});return n;});
+    render(data);bot(col?`Column <span class="tag">${esc(col)}</span> converted to lowercase.`:'All text converted to lowercase.','success');return;
+  }
+
+  // ── FILL EMPTY CELLS ───────────────────
+  const fem=cmd.match(/fill\s+(?:empty|blank)\s+(?:cells?\s+)?(?:with\s+)?["']?(.+?)["']?$/);
+  if(fem){
+    const val=fem[1];let count=0;
+    data=data.map(r=>{const n={...r};Object.keys(n).forEach(k=>{if(String(n[k]).trim()===''){n[k]=val;count++;}});return n;});
+    render(data);bot(`Filled <strong>${count}</strong> empty cells with <span class="val">${esc(val)}</span>.`,'success');return;
+  }
+
+  // ── REPLACE VALUE ──────────────────────
+  const rpm=cmd.match(/replace\s+["']?(.+?)["']?\s+with\s+["']?(.+?)["']?$/);
+  if(rpm){
+    const from=rpm[1],to=rpm[2];let count=0;
+    data=data.map(r=>{const n={...r};Object.keys(n).forEach(k=>{
+      if(String(n[k]).toLowerCase()===from.toLowerCase()){n[k]=to;count++;}});return n;});
+    render(data);bot(`Replaced <strong>${count}</strong> occurrences of "<span class="tag">${esc(from)}</span>" with "<span class="val">${esc(to)}</span>".`,'success');return;
+  }
+
+  // ── REVERSE ROWS ───────────────────────
+  if(/\breverse\b/.test(cmd)){
+    data.reverse();hlSet.clear();render(data);
+    bot('Row order reversed.','success');return;
+  }
+
+  // ── SHUFFLE ────────────────────────────
+  if(/\bshuffle\b|\brandomize\b/.test(cmd)){
+    for(let i=data.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[data[i],data[j]]=[data[j],data[i]];}
+    hlSet.clear();render(data);bot('Rows randomly shuffled.','success');return;
+  }
+
+  // ── MOVE COLUMN ────────────────────────
+  const mvcm=cmd.match(/move\s+(?:column\s+)?["']?(.+?)["']?\s+to\s+(?:position\s+|column\s+)?(\d+)/);
+  if(mvcm){
+    const fc=findColStr(mvcm[1]);const pos=parseInt(mvcm[2])-1;
+    if(!fc){bot(`Column "${mvcm[1]}" not found.`,'error');return;}
+    const ck=Object.keys(data[0]);
+    if(pos<0||pos>=ck.length){bot(`Position ${mvcm[2]} is out of range.`,'error');return;}
+    const newOrder=[...ck.filter(k=>k!==fc)];newOrder.splice(pos,0,fc);
+    data=data.map(r=>{const n={};newOrder.forEach(k=>{n[k]=r[k];});return n;});
+    cols=newOrder;render(data);
+    bot(`Moved column <span class="tag">${esc(fc)}</span> to position <strong>${mvcm[2]}</strong>.`,'success');return;
+  }
+
+  // ── UNIQUE VALUES IN COLUMN ────────────
+  if(/\bunique\b|\bdistinct\b/.test(cmd)){
+    const col=findCol(cmd)||(data.length?Object.keys(data[0])[0]:null);
+    if(!col){bot('Specify a column name.','error');return;}
+    const uv=[...new Set(data.map(r=>String(r[col])))];
+    bot(`<strong>${uv.length}</strong> unique values in <span class="tag">${esc(col)}</span>: ${uv.slice(0,20).map(v=>`<span class="val">${esc(v)}</span>`).join(' ')}${uv.length>20?` … and ${uv.length-20} more`:''}`, 'info',
+      [{t:`${uv.length} unique`}]);return;
+  }
+
+  // ── FALLBACK ───────────────────────────
+  bot(`I didn't recognise that. Here are all supported commands:<br/><br/>
+    <strong>Rows:</strong> <span class="tag">remove first/last row</span> <span class="tag">remove row 3</span> <span class="tag">remove rows 2 to 5</span> <span class="tag">remove rows where col > val</span> <span class="tag">keep first/last N rows</span> <span class="tag">remove duplicates</span> <span class="tag">remove empty rows</span> <span class="tag">reverse</span> <span class="tag">shuffle</span><br/><br/>
+    <strong>Columns:</strong> <span class="tag">remove first/last column</span> <span class="tag">remove column 2</span> <span class="tag">remove [name] column</span> <span class="tag">rename col X to Y</span> <span class="tag">add column Name</span> <span class="tag">move column X to position 2</span><br/><br/>
+    <strong>Sort:</strong> <span class="tag">sort by column 2 ascending</span> <span class="tag">sort by [name] desc</span><br/><br/>
+    <strong>Filter:</strong> <span class="tag">filter where salary > 5000</span> <span class="tag">filter where name = John</span><br/><br/>
+    <strong>Highlight:</strong> <span class="tag">highlight score > 80</span> <span class="tag">highlight red where age < 18</span> <span class="tag">clear highlights</span><br/><br/>
+    <strong>Stats:</strong> <span class="tag">sum</span> <span class="tag">average</span> <span class="tag">max</span> <span class="tag">min</span> <span class="tag">median</span> <span class="tag">count</span> <span class="tag">unique values in [col]</span><br/><br/>
+    <strong>Transform:</strong> <span class="tag">trim whitespace</span> <span class="tag">uppercase [col]</span> <span class="tag">lowercase</span> <span class="tag">fill empty with 0</span> <span class="tag">replace X with Y</span><br/><br/>
+    <strong>Other:</strong> <span class="tag">search [term]</span> <span class="tag">show column names</span> <span class="tag">summary</span> <span class="tag">reset</span>`,'error');
 }
 
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════
 //  HELPERS
-// ════════════════════════════════════════════════════════
-function findCol(cmd) {
-  // Try exact column name match (case-insensitive)
-  const lower = cmd.toLowerCase();
-  // longest match first
-  const sorted = [...cols].sort((a,b) => b.length - a.length);
-  for (const c of sorted) {
-    if (lower.includes(c.toLowerCase())) return c;
-  }
-  // keywords for positional cols
-  if (/\bfirst col|\bfirst column/.test(lower)) return cols[0];
-  if (/\blast col|\blast column/.test(lower)) return cols[cols.length-1];
+// ════════════════════════════════════════════
+function findColStr(str){
+  const low=str.toLowerCase().trim();
+  const ck=data.length?Object.keys(data[0]):cols;
+  const sorted=[...ck].sort((a,b)=>b.length-a.length);
+  for(const c of sorted){if(c.toLowerCase()===low)return c;}
+  for(const c of sorted){if(c.toLowerCase().includes(low)||low.includes(c.toLowerCase()))return c;}
   return null;
 }
-
-function determineLastCol(cmd) {
-  if (/last/.test(cmd)) return cols.length - 1;
-  return 0; // default first
+function findCol(cmd){
+  const ck=data.length?Object.keys(data[0]):cols;
+  const sorted=[...ck].sort((a,b)=>b.length-a.length);
+  const low=cmd.toLowerCase();
+  for(const c of sorted){if(low.includes(c.toLowerCase()))return c;}
+  if(/\bfirst col/.test(low))return ck[0];
+  if(/\blast col/.test(low))return ck[ck.length-1];
+  return null;
 }
-
-function numericCols(rows) {
-  return cols.filter(c => rows.some(r => !isNaN(parseFloat(r[c])) && r[c] !== ''));
+function numCols(rows){
+  const ck=rows.length?Object.keys(rows[0]):cols;
+  return ck.filter(c=>rows.some(r=>!isNaN(parseFloat(r[c]))&&String(r[c]).trim()!==''));
 }
-
-function sumCols(rows, nc) {
-  const res = {};
-  nc.forEach(c => { res[c] = rows.reduce((a,r) => a + (parseFloat(r[c]) || 0), 0); });
-  return res;
-}
-
-function parseCondition(cmd) {
-  // Match patterns like: col op value
-  // Operators: >, <, >=, <=, =, ==, !=, contains, is, not
-  const ops = [
-    { re: />=/, sym: '>=' }, { re: /<=/, sym: '<=' },
-    { re: /!=|not equal|<>/, sym: '!=' },
-    { re: /\bgreater than or equal\b/, sym: '>=' },
-    { re: /\bless than or equal\b/, sym: '<=' },
-    { re: /\bgreater than\b/, sym: '>' },
-    { re: /\bless than\b/, sym: '<' },
-    { re: /\babove\b|\bover\b|\bmore than\b|\bexceeds?\b/, sym: '>' },
-    { re: /\bbelow\b|\bunder\b|\bbeneath\b/, sym: '<' },
-    { re: /\bcontains?\b|\bhas\b/, sym: 'contains' },
-    { re: /\bis\b|\bequals?\b|==|=/, sym: '==' },
-    { re: />/, sym: '>' }, { re: /</, sym: '<' },
+function parseCond(cmd){
+  const ops=[
+    {re:/>=|greater than or equal/,s:'>='},
+    {re:/<=|less than or equal/,s:'<='},
+    {re:/!=|not equal|<>/,s:'!='},
+    {re:/\babove\b|\bover\b|\bmore than\b|\bexceeds?\b|\bgreater than\b/,s:'>'},
+    {re:/\bbelow\b|\bunder\b|\bless than\b/,s:'<'},
+    {re:/\bcontains?\b/,s:'contains'},
+    {re:/\bstarts?\s*with\b/,s:'startswith'},
+    {re:/\bends?\s*with\b/,s:'endswith'},
+    {re:/\bis\b|\bequals?\b|==/,s:'=='},
+    {re:/>/,s:'>'},{re:/</,s:'<'},{re:/=/,s:'=='},
   ];
-
-  const lower = cmd.toLowerCase();
-  let colName = findCol(cmd);
-
-  // Find operator
-  let sym = null;
-  for (const op of ops) {
-    if (op.re.test(lower)) { sym = op.sym; break; }
-  }
-
-  if (!sym) return null;
-
-  // Find value — number or quoted string or last token
-  let val = null;
-  const numMatch = cmd.match(/[\d]+\.?[\d]*/);
-  const quotedMatch = cmd.match(/["'](.+?)["']/);
-  if (quotedMatch) val = quotedMatch[1];
-  else if (numMatch) val = numMatch[0];
-  else {
-    // Last meaningful word
-    const words = cmd.split(/\s+/);
-    val = words[words.length - 1];
-  }
-
-  if (!colName) {
-    // Try to guess col from context
-    colName = cols[0];
-  }
-
-  return { col: colName, op: sym, val };
+  const low=cmd.toLowerCase();
+  let sym=null;
+  for(const op of ops){if(op.re.test(low)){sym=op.s;break;}}
+  if(!sym)return null;
+  const col=findCol(cmd)||(data.length?Object.keys(data[0])[0]:cols[0]);
+  const qt=cmd.match(/["'](.+?)["']/);
+  const nm=cmd.match(/[\d]+\.?[\d]*/);
+  let val=qt?qt[1]:nm?nm[0]:cmd.split(/\s+/).pop();
+  return{col,op:sym,val};
 }
-
-function evalCond(row, { col, op, val }) {
-  const cell = String(row[col] ?? '');
-  const cellNum = parseFloat(cell);
-  const valNum = parseFloat(val);
-  switch(op) {
-    case '>':  return !isNaN(cellNum) && !isNaN(valNum) ? cellNum > valNum : cell > val;
-    case '<':  return !isNaN(cellNum) && !isNaN(valNum) ? cellNum < valNum : cell < val;
-    case '>=': return !isNaN(cellNum) && !isNaN(valNum) ? cellNum >= valNum : cell >= val;
-    case '<=': return !isNaN(cellNum) && !isNaN(valNum) ? cellNum <= valNum : cell <= val;
-    case '!=': return cell.toLowerCase() !== val.toLowerCase();
-    case '==': return cell.toLowerCase() === val.toLowerCase() || (!isNaN(cellNum) && cellNum === valNum);
-    case 'contains': return cell.toLowerCase().includes(String(val).toLowerCase());
-    default: return false;
+function evalC(row,{col,op,val}){
+  const cell=String(row[col]??'');
+  const cn=parseFloat(cell),vn=parseFloat(val);
+  switch(op){
+    case'>':return !isNaN(cn)&&!isNaN(vn)?cn>vn:cell>val;
+    case'<':return !isNaN(cn)&&!isNaN(vn)?cn<vn:cell<val;
+    case'>=':return !isNaN(cn)&&!isNaN(vn)?cn>=vn:cell>=val;
+    case'<=':return !isNaN(cn)&&!isNaN(vn)?cn<=vn:cell<=val;
+    case'!=':return cell.toLowerCase()!==String(val).toLowerCase();
+    case'==':return cell.toLowerCase()===String(val).toLowerCase()||(!isNaN(cn)&&cn===vn);
+    case'contains':return cell.toLowerCase().includes(String(val).toLowerCase());
+    case'startswith':return cell.toLowerCase().startsWith(String(val).toLowerCase());
+    case'endswith':return cell.toLowerCase().endsWith(String(val).toLowerCase());
+    default:return false;
   }
 }
+function fmt(n){return Number.isInteger(n)?n.toLocaleString():parseFloat(n.toFixed(2)).toLocaleString();}
 
-// ════════════════════════════════════════════════════════
-//  ACTIONS
-// ════════════════════════════════════════════════════════
-function resetData() {
-  if (!original.length) return;
-  data = clone(original);
-  cols = Object.keys(data[0]);
-  hlSet.clear();
-  render(data);
-  insight('Data <strong>reset</strong> to original.');
-  log('Reset to original data.', 's');
+// ════════════════════════════════════════════
+//  FILE ACTIONS
+// ════════════════════════════════════════════
+function resetData(){
+  if(!orig.length)return;
+  data=cl(orig);cols=Object.keys(data[0]);hlSet.clear();render(data);
+  bot('Data reset to the <strong>original</strong> state.','info');
+}
+function dlFile(){
+  if(!data.length)return;
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Sheet1');
+  XLSX.writeFile(wb,'datamind_export.xlsx');
+  bot('✅ Excel file downloaded!','success');
+}
+function dlCSV(){
+  if(!data.length)return;
+  const ws=XLSX.utils.json_to_sheet(data);
+  const csv=XLSX.utils.sheet_to_csv(ws);
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='datamind_export.csv';a.click();
+  bot('✅ CSV file downloaded!','success');
 }
 
-function downloadFile() {
-  if (!data.length) return;
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  XLSX.writeFile(wb, 'modified_spreadsheet.xlsx');
-  log('Downloaded modified spreadsheet.', 's');
+// ════════════════════════════════════════════
+//  CHAT UI
+// ════════════════════════════════════════════
+function userMsg(text){
+  const ch=document.getElementById('ch'),t=ts();
+  const d=document.createElement('div');d.className='mu';
+  d.innerHTML=`<div><div class="bub">${esc(text)}</div><div class="mt">${t}</div></div><div class="uav">👤</div>`;
+  ch.appendChild(d);sc();
 }
-
-// ════════════════════════════════════════════════════════
-//  UI HELPERS
-// ════════════════════════════════════════════════════════
-function insight(html) {
-  const el = document.getElementById('insight');
-  el.innerHTML = html; el.classList.add('on');
+function bot(html,type='info',badges=[]){
+  const ch=document.getElementById('ch'),t=ts();
+  let bh='';
+  if(badges.length)bh='<div class="rbadges">'+badges.map(b=>`<span class="rb${b.w?' w':b.r?' r':''}">${b.t}</span>`).join('')+'</div>';
+  const d=document.createElement('div');d.className='mb';
+  d.innerHTML=`<div class="av" style="width:24px;height:24px;font-size:11px;flex-shrink:0;">⬡</div>
+    <div><div class="bub ${type}">${html}${bh}</div><div class="mt">${t}</div></div>`;
+  ch.appendChild(d);sc();
 }
-
-function log(msg, type = 'i') {
-  const body = document.getElementById('logBody');
-  const empty = body.querySelector('.log-empty');
-  if (empty) empty.remove();
-  const t = new Date().toLocaleTimeString();
-  const e = document.createElement('div');
-  e.className = 'log-entry';
-  e.innerHTML = `<div class="ldot ${type}"></div><div><div class="log-text">${msg}</div><div class="log-time">${t}</div></div>`;
-  body.prepend(e);
-}
-
-function clearLog() {
-  document.getElementById('logBody').innerHTML = '<div class="log-empty">Log cleared.</div>';
-}
+function typing(on){document.getElementById('tr').classList.toggle('on',on);if(on)sc();}
+function sc(){const ch=document.getElementById('ch');ch.scrollTop=ch.scrollHeight;}
+function clearChat(){document.getElementById('ch').innerHTML='';bot('Chat cleared. What would you like to do?','info');}
+function ts(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 </script>
 </body>
 </html>
