@@ -299,15 +299,7 @@ header{
   <div class="orb orb3"></div>
 </div>
 
-<!-- API Key Modal -->
-<div class="modal-overlay" id="apiModal">
-  <div class="modal">
-    <h3>🔑 Connect AI</h3>
-    <p>Enter your Gemini API key. It's only stored in this session and only sent to Google's API.</p>
-    <input type="password" id="apiKeyInput" placeholder="AIza…" onkeydown="if(event.key==='Enter')saveApiKey()"/>
-    <button class="btn-save" onclick="saveApiKey()">Save & Continue →</button>
-  </div>
-</div>
+
 
 <!-- Header -->
 <header>
@@ -318,9 +310,9 @@ header{
       <div class="logo-sub">Natural Language Data Engine</div>
     </div>
   </div>
-  <div class="api-badge" onclick="document.getElementById('apiModal').classList.add('show')">
-    <div class="dot red" id="apiDot"></div>
-    <span id="apiStatus">Set API Key</span>
+  <div class="api-badge">
+    <div class="dot" id="apiDot"></div>
+    <span id="apiStatus">Powered by Claude</span>
   </div>
 </header>
 
@@ -402,7 +394,6 @@ header{
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-let GEMINI_API_KEY = '';
 let originalData = [];
 let workingData  = [];
 let headers      = [];
@@ -419,17 +410,6 @@ const QUICK = [
   'Show top 10 rows',
   'Count rows',
 ];
-
-// ── API Key ────────────────────────────────────────────────────────
-function saveApiKey() {
-  const v = document.getElementById('apiKeyInput').value.trim();
-  if (!v) return;
-  GEMINI_API_KEY = v;
-  document.getElementById('apiModal').classList.remove('show');
-  document.getElementById('apiDot').classList.remove('red');
-  document.getElementById('apiStatus').textContent = 'API Connected';
-  log('Gemini API key saved.', 's');
-}
 
 // ── File Handling ──────────────────────────────────────────────────
 document.getElementById('fileInput').addEventListener('change', e => {
@@ -537,11 +517,6 @@ function handleKey(e) {
 async function runCommand() {
   const cmd = document.getElementById('cmdInput').value.trim();
   if (!cmd) return;
-  if (!GEMINI_API_KEY) {
-    log('Please set your Gemini API key first.', 'e');
-    document.getElementById('apiModal').classList.add('show');
-    return;
-  }
   if (!workingData.length) {
     log('Please upload a file first.', 'e');
     return;
@@ -550,7 +525,6 @@ async function runCommand() {
   setThinking(true);
   log(`Command: "${cmd}"`, 'i');
 
-  // Build prompt
   const sample = workingData.slice(0, 20);
   const prompt = `You are a spreadsheet AI. The user has a spreadsheet with these columns: ${JSON.stringify(headers)}.
 
@@ -565,7 +539,7 @@ Respond ONLY with a valid JSON object (no markdown, no explanation) using exactl
 {
   "action": "sort" | "filter" | "highlight" | "delete_rows" | "compute" | "transform" | "info",
   "description": "Human-readable explanation of what was done",
-  "result_value": <optional scalar result like a number or string for 'compute'/'info' actions>,
+  "result_value": <optional scalar result like a number or string for compute/info actions>,
   "sort_column": <column name, only for sort>,
   "sort_order": "asc" | "desc",
   "filter_condition": <JS expression string using 'row' object, e.g. "row['Score'] > 80">,
@@ -575,24 +549,22 @@ Respond ONLY with a valid JSON object (no markdown, no explanation) using exactl
   "transform_expression": <JS expression using 'row', returns new cell value>,
   "delete_condition": <JS expression string for rows to DELETE>
 }
-
-Only include fields relevant to the action. For 'compute' or 'info', just set action and result_value and description.`;
+Only include fields relevant to the action.`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
     const data = await res.json();
-
     if (data.error) throw new Error(data.error.message);
 
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    // strip possible markdown fences
+    let text = (data.content || []).map(b => b.text || '').join('');
     text = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(text);
 
